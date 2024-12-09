@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "fastapi-template"
+version = "0.1.0"
+description = "A Fastapi template that will dynamically import routes from the addons folder"
+authors = ["Martin Egeskov <mart337i@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.6"
+urllib3 = "^2.2.3"
+python-dotenv = "^1.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
