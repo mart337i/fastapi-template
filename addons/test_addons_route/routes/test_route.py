@@ -3,9 +3,9 @@ from fastapi.routing import APIRouter
 from fastapi.responses import FileResponse
 import starlette
 import re
+import sys
 
 from base.logger import logger as _logger
-
 
 router = APIRouter(
     prefix=f"/test",
@@ -17,4 +17,4 @@ dependency = []
 
 @router.get('/test')
 def test():
-    return {"access_token": "200"}
+    return {"Modules": f"{sys.modules}"}

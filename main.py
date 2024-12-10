@@ -1,6 +1,6 @@
 from fastapi.applications import FastAPI
 from base.logger import logger as _logger
-from base.api_init import create_app
+from base.api_init import FastAPIWrapper
 
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -8,7 +8,9 @@ from pydantic import BaseModel
 from fastapi.responses import JSONResponse
 from fastapi import Request
 
-app: FastAPI = create_app()
+# Initialize the wrapper
+wrapper = FastAPIWrapper()
+app: FastAPI = wrapper.fastapi_app  # Access the FastAPI instance
 
 @app.get("/", response_class=HTMLResponse)
 def root():
