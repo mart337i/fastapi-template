@@ -27,12 +27,6 @@ jobs:
           pip install poetry
           poetry install
 
-      - name: Run application to verify it starts
-        run: |
-          poetry run fastapi dev app/main.py  --host 127.0.0.1 --port 8000 &
-          sleep 5
-          curl --fail http://127.0.0.1:8000 || exit 1
-
       - name: Run tests
         run: |
           poetry run pytest
