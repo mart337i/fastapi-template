@@ -17,4 +17,4 @@ dependency = []
 
 @router.get('/test')
 def test():
-    return {"Modules": f"{sys.modules}"}
+    return {"Modules": f"{sys.modules.keys()}"}
