@@ -1,6 +1,6 @@
 from fastapi.applications import FastAPI
-from base.logger import logger as _logger
-from base.api_init import FastAPIWrapper
+from app.base.logger import logger as _logger
+from app.base.api_init import FastAPIWrapper
 
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel

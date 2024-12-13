@@ -9,7 +9,7 @@ import base64
 
 from ..models.auth import User
 
-from base.logger import logger as _logger
+from app.base.logger import logger as _logger
 import os
 
 router = APIRouter()

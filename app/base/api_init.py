@@ -11,10 +11,10 @@ from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
 
 # Local application imports
-from base.logger import logger as _logger
-from base.routing.auth import router as authService
-from base.utils import log_request_info
-from base.module import Module
+from app.base.logger import logger as _logger
+from app.base.routing.auth import router as authService
+from app.base.utils import log_request_info
+from app.base.module import Module
 
 # Miscellaneous
 import urllib3
