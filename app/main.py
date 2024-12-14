@@ -115,11 +115,6 @@ async def remove_module(module_name: str):
         "message": f"Routes from module '{module_name}' have been removed",
         "removed_routes": removed_routes,
         "unmatched_routes": unmatched_routes,
-        "app.router.routes": [
-            {"path": route.path, "methods": list(route.methods), "name": route.name}
-            for route in app.router.routes
-            if isinstance(route, APIRoute)
-        ],
     }
 
 @app.post("/enable-module")
@@ -171,7 +166,7 @@ async def enable_module(module_name: str):
             continue
 
         # Add the route dynamically
-        async def dynamic_handler(request):
+        async def dynamic_handler(request = {}):
             return JSONResponse(content={"message": f"Handled by dynamic route: {path}"})
 
         _logger.debug(f"Adding route '{path}' with methods {methods}.")
