@@ -15,6 +15,7 @@ from app.base.logger import logger as _logger
 from app.base.routing.auth import router as authService
 from app.base.utils import log_request_info
 from app.base.module import Module
+from app.base.db import get_session
 
 # Miscellaneous
 import urllib3
@@ -51,13 +52,14 @@ class FastAPIWrapper:
             docs_url="/docs/",
             description=description,
         )
+        self.load_env()
+
         self.setup_base_routes(app=fastapi_app)
         self.setup_addon_routers(app=fastapi_app)
 
         self.use_route_names_as_operation_ids(app=fastapi_app)
 
         self.setup_middleware(app=fastapi_app)
-        self.load_env()
         return fastapi_app
 
     def setup_base_routes(self,app: FastAPI) -> None:
@@ -133,7 +135,7 @@ class FastAPIWrapper:
                         if not manifest.get("installable", True):
                             _logger.info(f"Skipping non-installable module: {module_name}")
                             continue
-                        
+
                         # Import the module dynamically
                         spec = importlib.util.spec_from_file_location(f"{base_module}.{module_name}", module_path)
                         mod = importlib.util.module_from_spec(spec)
@@ -144,7 +146,8 @@ class FastAPIWrapper:
                             app.include_router(
                                 router=mod.router,
                                 dependencies=mod.dependency + [
-                                    Depends(log_request_info)
+                                    Depends(log_request_info),
+                                    # Depends(get_session),
                                 ],
                             )
 

@@ -11,6 +11,7 @@ fastapi = {extras = ["standard"], version = "^0.115.6"}
 urllib3 = "^2.2.3"
 python-dotenv = "^1.0.1"
 pytest = "^8.3.4"
+sqlmodel = "^0.0.22"
 
 
 [build-system]
