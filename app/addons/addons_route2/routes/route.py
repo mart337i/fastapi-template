@@ -8,21 +8,13 @@ import sys
 from app.base.logger import logger as _logger
 
 router = APIRouter(
-    prefix=f"/test",
-    tags=["Test route"],
+    prefix=f"/test2",
+    tags=["Test route2"],
 )
 
 dependency = []
 
 
-@router.get('/test')
-def test():
+@router.get('/test_route2')
+def test_route2():
     return {"Modules": f"{sys.modules.keys()}"}
-
-@router.get("/route1")
-async def route1():
-    return {"message": "Route 1"}
-
-@router.get("/route2")
-async def route2():
-    return {"message": "Route 2"}

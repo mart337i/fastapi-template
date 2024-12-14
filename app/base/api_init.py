@@ -25,9 +25,9 @@ urllib3.disable_warnings()
 class FastAPIWrapper:
 
     def __init__(self):
-        self.fastapi_app = self.create_app()
-        self.modules = {}
+        self.modules = []
         self.sys_modules = sys.modules or {}
+        self.fastapi_app = self.create_app()
 
 
     def load_env(self):
@@ -46,7 +46,7 @@ class FastAPIWrapper:
     def create_app(self):
         description = f"API"
         fastapi_app = FastAPI(
-            title="VPS Deployment API",
+            title="API",
             openapi_url=f"/openapi.json",
             docs_url="/docs/",
             description=description,
@@ -147,11 +147,10 @@ class FastAPIWrapper:
                                     Depends(log_request_info)
                                 ],
                             )
+                            self.modules.append(manifest)
                             _logger.info(f"Registered router from module: {module_name} with dependencies {mod.dependency}")
                         else:
                             _logger.info(f"Module '{module_name}' does not have 'router' or 'dependency' attributes.")
-
-                        # self.modules[module_name] = module
 
                     except ModuleNotFoundError as e:
                         _logger.error(f"Module not found: {module_name}, error: {e}")

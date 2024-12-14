@@ -115,6 +115,6 @@ class Module:
             if manifest.get("installable", True):
                 raise ValueError(f"Module {module}: invalid manifest") from e
 
-        manifest['addons_path'] = normpath(opj(mod_path, os.pardir))
+        manifest['addons_path'] = normpath(opj(mod_path))
 
         return manifest

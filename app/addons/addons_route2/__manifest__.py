@@ -1,5 +1,5 @@
 {
-    'name': 'Test Module',
+    'name': 'Test Module 2',
     'version': '1.0.0',
     'summary': 'A test module for route registration',
     'description': """

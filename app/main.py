@@ -1,4 +1,5 @@
 from fastapi.applications import FastAPI
+from starlette.routing import BaseRoute
 from app.base.logger import logger as _logger
 from app.base.api_init import FastAPIWrapper
 
@@ -6,11 +7,14 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from fastapi.responses import JSONResponse
-from fastapi import Request
+from fastapi import Request, HTTPException
 
 # Initialize the wrapper
 wrapper = FastAPIWrapper()
-app: FastAPI = wrapper.fastapi_app  # Access the FastAPI instance
+app: FastAPI = wrapper.fastapi_app  
+
+loaded_modules = wrapper.modules
+available_modules = wrapper.modules 
 
 @app.get("/", response_class=HTMLResponse)
 def root():
@@ -45,3 +49,34 @@ def root():
             </body>
             </html>
     """
+
+@app.delete("/remove-route")
+async def remove_route(path: str):
+    route_to_remove = None
+    for route in app.router.routes:
+        if getattr(route, "path", None) == path:
+            route_to_remove: BaseRoute = route
+            break
+    
+    if not route_to_remove:
+        raise HTTPException(status_code=404, detail="Route not found")
+    
+    app.router.routes.remove(route_to_remove)
+    app.openapi_schema = None  # Clear the cached schema
+    return {"message": f"Route '{path}' has been removed"}
+
+
+@app.get("/routes/reload-docs")
+async def reload_docs():
+    app.openapi_schema = None  # Clear the cached schema
+    return {"message": "OpenAPI schema reloaded"}
+
+
+@app.get("/routes")
+async def get_active_routes():
+    return [route.path for route in app.router.routes]
+
+
+@app.get("/module/get_loaded_modules")
+async def get_loaded_modules() -> list:
+    return loaded_modules
