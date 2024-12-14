@@ -3,6 +3,12 @@ FROM python:3.12.3
 # Set the working directory
 WORKDIR /code
 
+# Create the directory structure and an empty log file
+RUN mkdir -p app/base/logs && touch app/base/logs/application.log
+
+# Ensure the log file is writable
+RUN chmod 666 app/base/logs/application.log
+
 COPY ./pyproject.toml /code/
 
 # Install Poetry
