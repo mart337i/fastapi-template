@@ -17,6 +17,7 @@ class Module:
     def __init__(self, module_path: str):
         self.module_path = module_path
         self.manifest = {}
+        self.name = False
         
 
     def load_module(self, name):
@@ -114,7 +115,9 @@ class Module:
         except ValueError as e:
             if manifest.get("installable", True):
                 raise ValueError(f"Module {module}: invalid manifest") from e
+        
+        if not manifest.get('routes'):
+            manifest['routes'] = []
 
-        manifest['addons_path'] = normpath(opj(mod_path))
-
+        manifest['addons_path'] = normpath(opj(mod_path, os.pardir))
         return manifest

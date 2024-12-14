@@ -133,7 +133,7 @@ class FastAPIWrapper:
                         if not manifest.get("installable", True):
                             _logger.info(f"Skipping non-installable module: {module_name}")
                             continue
-
+                        
                         # Import the module dynamically
                         spec = importlib.util.spec_from_file_location(f"{base_module}.{module_name}", module_path)
                         mod = importlib.util.module_from_spec(spec)
@@ -147,6 +147,17 @@ class FastAPIWrapper:
                                     Depends(log_request_info)
                                 ],
                             )
+
+                            for route in mod.router.routes:
+                                manifest['routes'].append({
+                                    route.path : {
+                                        'path' : str(route.path),
+                                        'name' : str(route.name),
+                                        'methods' : str(route.methods),
+                                    }
+                               })
+
+
                             self.modules.append(manifest)
                             _logger.info(f"Registered router from module: {module_name} with dependencies {mod.dependency}")
                         else:
