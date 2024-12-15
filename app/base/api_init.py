@@ -5,7 +5,7 @@ import sys
 
 # Third-party imports
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException,APIRouter
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
@@ -15,7 +15,7 @@ from app.base.logger import logger as _logger
 from app.base.routing.auth import router as authService
 from app.base.utils import log_request_info
 from app.base.module import Module
-from app.base.db import get_session
+# from app.base.db import get_session
 
 # Miscellaneous
 import urllib3
@@ -35,13 +35,20 @@ class FastAPIWrapper:
         """
         Loads every config file inside config/ in to the environment
         """
-        dirname = os.path.dirname(__file__)
-        config_dir = os.path.join(dirname, 'config')
+        addons_dir = os.path.join(os.path.dirname(__file__), '../')
+        for root, dirs, files in os.walk(addons_dir):
+            if 'tests' in dirs:
+                _logger.debug(f"Skipped test dir: {os.path.join(root, 'tests')}")
+                dirs.remove('tests')  # Prevent descending into 'tests' directories
 
-        for config_file in os.listdir(path=config_dir):
-            config_path = os.path.join(config_dir, config_file)
-            if os.path.isfile(path=config_path):
-                load_dotenv(dotenv_path=config_path, override=True)
+            if os.path.basename(root) == 'config':
+                _logger.debug(f"Inspecting 'config' folder: {root}")
+                
+                # Find all *.env files in this folder
+                for file in files:
+                    if file.endswith('.env'):
+                        env_file_path = os.path.join(root, file)
+                        _logger.info(f"Found .env file: {env_file_path}")
 
 
     def create_app(self):
@@ -122,6 +129,14 @@ class FastAPIWrapper:
         base_module = 'addons'
 
         for root, dirs, files in os.walk(addons_dir):
+            if 'tests' in dirs:
+                _logger.debug(f"Skipped test dir: {os.path.join(root, 'tests')}")
+                dirs.remove('tests')
+
+            if 'config' in dirs:
+                _logger.debug(f"Skipped config dir: {os.path.join(root, 'tests')}")
+                dirs.remove('config')
+
             for file in files:
                 if file.endswith('.py') and not file.startswith('__'):
                     module_path = os.path.join(root, file)
@@ -143,28 +158,28 @@ class FastAPIWrapper:
 
                         # Check for and register the router
                         if hasattr(mod, 'router') and hasattr(mod, 'dependency'):
-                            app.include_router(
-                                router=mod.router,
-                                dependencies=mod.dependency + [
-                                    Depends(log_request_info),
-                                    # Depends(get_session),
-                                ],
-                            )
-
-                            for route in mod.router.routes:
-                                manifest['routes'].append({
-                                    route.path : {
-                                        'path' : str(route.path),
-                                        'name' : str(route.name),
-                                        'methods' : str(route.methods),
-                                    }
-                               })
-
-
-                            self.modules.append(manifest)
-                            _logger.info(f"Registered router from module: {module_name} with dependencies {mod.dependency}")
+                            if isinstance(mod.router, APIRouter):
+                                app.include_router(
+                                    router=mod.router,
+                                    dependencies=mod.dependency + [
+                                        Depends(log_request_info),
+                                        # Depends(get_session),
+                                    ],
+                                )
+                                for route in mod.router.routes:
+                                    manifest['routes'].append({
+                                        route.path : {
+                                            'path' : str(route.path),
+                                            'name' : str(route.name),
+                                            'methods' : str(route.methods),
+                                        }
+                                })
+                                self.modules.append(manifest)
+                                _logger.info(f"Registered router from module: {module_name} with dependencies {mod.dependency}")
+                            else:
+                                _logger.error(f"Imported route is not of type {mod.router} != {APIRouter}")
                         else:
-                            _logger.info(f"Module '{module_name}' does not have 'router' or 'dependency' attributes.")
+                            _logger.warning(f"Module '{module_name}' does not have 'router' or 'dependency' attributes.")
 
                     except ModuleNotFoundError as e:
                         _logger.error(f"Module not found: {module_name}, error: {e}")

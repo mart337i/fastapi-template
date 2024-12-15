@@ -132,6 +132,7 @@ venv.bak/
 
 # Config 
 app/base/config/*
+alembic/versions/*
 
 # Spyder project settings
 .spyderproject
