@@ -14,8 +14,8 @@ from fastapi.routing import APIRoute
 wrapper = FastAPIWrapper()
 app: FastAPI = wrapper.fastapi_app  
 
-loaded_modules = wrapper.modules
-available_modules = wrapper.modules 
+loaded_modules = wrapper.routing.modules
+available_modules = wrapper.routing.modules
 deactivated = []
 
 @app.get("/", response_class=HTMLResponse)
@@ -54,68 +54,44 @@ def root():
 
 
 @app.delete("/remove-module")
-async def remove_module(module_name: str):
+async def remove_module(technical_name: str):
     """
     Remove all routes associated with the specified module.
 
     Args:
-        module_name (str): The name of the module whose routes should be removed.
+        technical_name (str): The name of the module whose routes should be removed.
 
     Returns:
         dict: Confirmation message of the removal process.
     """
-    # Find the module
-    module_to_remove = next((module for module in loaded_modules if module["name"] == module_name), None)
-    if not module_to_remove:
-        raise HTTPException(status_code=404, detail=f"Module '{module_name}' not found")
+    try:
+        _logger.info(f"Remove module from technical_name: {technical_name}")
+        rec = wrapper.routing.remove_module(app, technical_name,loaded_modules)
+        app.openapi_schema = None
 
-    routes_to_remove = module_to_remove["routes"]
-    removed_routes = []
-    unmatched_routes = []
+        return rec
+    except Exception as e:
+        _logger.error(f"Failed to remove module at '{technical_name}': {e}")
+        return {"status": "error", "message": str(e)}
 
-    for route_entry in routes_to_remove:
-        # Extract the key and value for each route entry
-        if len(route_entry) != 1:
-            unmatched_routes.append(route_entry)
-            continue
 
-        route_path, route_details = next(iter(route_entry.items()))
+@app.post("/enable-module")
+def enable_module(technical_name: str):
+    """
+    Enable and register routes for a specific module located at the given technical_name.
 
-        # Ensure the route details contain the path and methods
-        module_path = route_details.get("path")
-        module_methods = eval(route_details.get("methods", "[]"))  # Safely evaluate the set
+    Args:
+        technical_name (str): The technical_name to the module folder.
+    """
+    try:
+        _logger.info(f"Enabling module from technical_name: {technical_name}")
+        wrapper.routing.enable_module(app, technical_name)
+        app.openapi_schema = None
 
-        if not module_path or not module_methods:
-            unmatched_routes.append(route_entry)
-            continue
-
-        # Look for a matching route in app.router.routes
-        route_to_remove = next(
-            (
-                route
-                for route in app.router.routes
-                if isinstance(route, APIRoute)
-                and route.path == module_path
-                and module_methods.issubset(route.methods)
-            ),
-            None,
-        )
-
-        if route_to_remove:
-            app.router.routes.remove(route_to_remove)
-            deactivated.append(module_path)
-            removed_routes.append(module_path)
-        else:
-            unmatched_routes.append(route_entry)
-
-    # Clear OpenAPI cache
-    app.openapi_schema = None
-
-    return {
-        "message": f"Routes from module '{module_name}' have been removed",
-        "removed_routes": removed_routes,
-        "unmatched_routes": unmatched_routes,
-    }
+        return {"status": "success", "message": f"Module at '{technical_name}' has been enabled."}
+    except Exception as e:
+        _logger.error(f"Failed to enable module at '{technical_name}': {e}")
+        return {"status": "error", "message": str(e)}
 
 @app.get("/routes/reload-docs")
 async def reload_docs():

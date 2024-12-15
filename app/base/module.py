@@ -17,7 +17,7 @@ class Module:
     def __init__(self, module_path: str):
         self.module_path = module_path
         self.manifest = {}
-        self.name = False
+        self.technical_name = False
         
 
     def load_module(self, name):
@@ -119,5 +119,6 @@ class Module:
         if not manifest.get('routes'):
             manifest['routes'] = []
 
-        manifest['addons_path'] = normpath(opj(mod_path, os.pardir))
+        manifest['addons_path'] = normpath(mod_path)
+        manifest['technical_name'] = os.path.basename(manifest['addons_path'])
         return manifest

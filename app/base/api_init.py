@@ -12,9 +12,10 @@ from starlette.middleware.cors import CORSMiddleware
 
 # Local application imports
 from app.base.logger import logger as _logger
-from app.base.routing.auth import router as authService
+from app.base.auth.auth import router as authService
 from app.base.utils import log_request_info
 from app.base.module import Module
+from app.base.routing_utils.routing import Routing
 # from app.base.db import get_session
 
 # Miscellaneous
@@ -26,9 +27,9 @@ urllib3.disable_warnings()
 class FastAPIWrapper:
 
     def __init__(self):
-        self.modules = []
         self.sys_modules = sys.modules or {}
-        self.fastapi_app = self.create_app()
+        self.routing = Routing()
+        self.fastapi_app = self.create_app() # fastapi_app has to be the last to be created
 
 
     def load_env(self):
@@ -81,7 +82,7 @@ class FastAPIWrapper:
         """
             Import all routes using dynamic importing (Reflections)
         """
-        self.register_routes(app=app)
+        self.routing.register_routes(app=app)
 
 
     def setup_middleware(self,app : FastAPI):
@@ -118,74 +119,4 @@ class FastAPIWrapper:
                     raise Exception(f"Route function names {[route.name]} should be unique")
                 route.operation_id = route.name
                 route_names.add(route.name)
-
-
-    def register_routes(self, app: FastAPI):
-        """
-        Loop through all Python files in the addons/ directory, load each module's manifest,
-        and register routes in the FastAPI app.
-        """
-        addons_dir = os.path.join(os.path.dirname(__file__), '../addons')
-        base_module = 'addons'
-
-        for root, dirs, files in os.walk(addons_dir):
-            if 'tests' in dirs:
-                _logger.debug(f"Skipped test dir: {os.path.join(root, 'tests')}")
-                dirs.remove('tests')
-
-            if 'config' in dirs:
-                _logger.debug(f"Skipped config dir: {os.path.join(root, 'tests')}")
-                dirs.remove('config')
-
-            for file in files:
-                if file.endswith('.py') and not file.startswith('__'):
-                    module_path = os.path.join(root, file)
-                    module_name = os.path.relpath(module_path, addons_dir).replace(os.sep, '.').rstrip('.py')
-
-                    # Create a Module instance
-                    module = Module(root)
-                    try:
-                        # Load the module's manifest
-                        manifest = module.load_manifest(module_name)
-                        if not manifest.get("installable", True):
-                            _logger.info(f"Skipping non-installable module: {module_name}")
-                            continue
-
-                        # Import the module dynamically
-                        spec = importlib.util.spec_from_file_location(f"{base_module}.{module_name}", module_path)
-                        mod = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(mod)
-
-                        # Check for and register the router
-                        if hasattr(mod, 'router') and hasattr(mod, 'dependency'):
-                            if isinstance(mod.router, APIRouter):
-                                app.include_router(
-                                    router=mod.router,
-                                    dependencies=mod.dependency + [
-                                        Depends(log_request_info),
-                                        # Depends(get_session),
-                                    ],
-                                )
-                                for route in mod.router.routes:
-                                    manifest['routes'].append({
-                                        route.path : {
-                                            'path' : str(route.path),
-                                            'name' : str(route.name),
-                                            'methods' : str(route.methods),
-                                        }
-                                })
-                                self.modules.append(manifest)
-                                _logger.info(f"Registered router from module: {module_name} with dependencies {mod.dependency}")
-                            else:
-                                _logger.error(f"Imported route is not of type {mod.router} != {APIRouter}")
-                        else:
-                            _logger.warning(f"Module '{module_name}' does not have 'router' or 'dependency' attributes.")
-
-                    except ModuleNotFoundError as e:
-                        _logger.error(f"Module not found: {module_name}, error: {e}")
-                    except AttributeError as e:
-                        _logger.error(f"Error in module '{module_name}': {e}")
-                    except Exception as e:
-                        _logger.error(f"Error loading module '{module_name}': {e}")
-
 
